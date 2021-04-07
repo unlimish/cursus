@@ -1,4 +1,4 @@
-# 42_cursus
+# cursus
 
 * [libft](#libft)
 * [get_next_line](#get_next_line)
@@ -6,7 +6,7 @@
 * [ft_server](#ft_server)
 * [ft_mini_ls](#ft_mini_ls)
 
-## [libft](https://github.com/unlimish/42_cursus/tree/master/libft)
+## [libft](https://github.com/unlimish/cursus/tree/master/libft)
 *Reimplementation of libc*
 ### Usage
 ```bash
@@ -14,7 +14,7 @@ $ make
 ```
 It will compile `libft.a`
 
-## [get_next_line](https://github.com/unlimish/42_cursus/tree/master/get_next_line)
+## [get_next_line](https://github.com/unlimish/cursus/tree/master/get_next_line)
 *Retruning new line from file descriptor*
 ### Prototype
 ```c
@@ -27,7 +27,7 @@ int get_next_line(int fd, char **line);
 |  0  |  EOF has been reached end of line  |
 |-1| Error |
 
-## [ft_printf](https://github.com/unlimish/42_cursus/tree/master/ft_printf)
+## [ft_printf](https://github.com/unlimish/cursus/tree/master/ft_printf)
 *Reimplementation of printf*
 ### Available format strings
 |   |   |   |
@@ -54,7 +54,7 @@ main()
   ft_printf("%-10.4d", 123);
 }
 ```
-## [ft_server](https://github.com/unlimish/42_cursus/tree/master/ft_server)
+## [ft_server](https://github.com/unlimish/cursus/tree/master/ft_server)
 ### Usage
 - Build contaioner then run with opening ports for HTTP`80` and SSL`443` (`-p Host's port:Container's port`)
 - Default's autoindex is **off**. If you want to use autoindex, add `--env autoindex=off` when `docker run`.
@@ -68,5 +68,5 @@ docker run -it -p 80:80 -p 443:443 --rm (--env autoindex=on) CONTAINER_NAME
 
 🔗 `localhost/wordpress`</br>🔗 `localhost/phpmyadmin`
 
-## [ft_mini_ls](https://github.com/unlimish/42_cursus/tree/master/ft_mini_ls)
+## [ft_mini_ls](https://github.com/unlimish/cursus/tree/master/ft_mini_ls)
 *ls -1tr*
