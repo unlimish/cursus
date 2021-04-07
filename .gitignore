@@ -1,0 +1,13 @@
+*.out
+*.gch
+*.a
+*.o
+libft/test.c
+*.plist
+test.c
+get_next_line/main.c
+get_next_line/test
+get_next_line/linux_makefile
+get_next_line/eof_test
+ft_printf/src/main.c
+*.dSYM
