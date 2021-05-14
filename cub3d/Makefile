@@ -1,9 +1,14 @@
 CC = gcc
-
 CFLAGS = -Wall -Wextra -Werror
 
+SRCS = src/main.c
+
+MINILIB_X = ./minilibx-linux/libmlx.a -lXext -lX11
+
 main:
-	$(CC) src/main.c ./minilibx-linux/libmlx.a -lXext -lX11 && ./a.out
+	$(CC) $(SRCS) $(MINILIB_X) && ./a.out
+addr:
+	$(CC) -fsanitize=address $(SRCS) $(MINILIB_X) && ./a.out
 
 %.o: %.c
 	$(CC) -Wall  -I/usr/include -Imlx_linux -O3 -c $< -o $@
