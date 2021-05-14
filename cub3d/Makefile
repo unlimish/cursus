@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wextra -Werror
 
 SRCS = src/main.c
 
-MINILIB_X = ./minilibx-linux/libmlx.a -lXext -lX11
+MINILIB_X = minilibx-linux/libmlx.a -lXext -lX11 -lm
 
 main:
 	$(CC) $(SRCS) $(MINILIB_X) && ./a.out
