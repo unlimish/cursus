@@ -4,8 +4,10 @@
 #include <X11/extensions/XShm.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "../minilibx-linux/mlx.h"
 #include "../inc/cub3d.h"
+#include "../inc/key_macros.h"
 
 # define width 640
 # define height 480
@@ -174,7 +176,6 @@ static int	close_window(t_vars *vars)
 int	main_loop(t_vars *vars)
 {
 	calc(vars);
-
 	return (0);
 }
 
@@ -188,13 +189,58 @@ static int key_hook(int keycode, t_vars *vars)
 	}
 }
 
+int	key_press(int key, t_vars *vars)
+{
+	if (key == K_W)
+	{
+		if (!world_map[(int)(vars->pos_x + vars->dir_x * vars->move_speed)][(int)(vars->pos_y)])
+			vars->pos_x += vars->dir_x * vars->move_speed;
+		if (!world_map[(int)(vars->pos_x)][(int)(vars->pos_y + vars->dir_y * vars->move_speed)])
+			vars->pos_y += vars->dir_y * vars->move_speed;
+	}
+	//move backwards if no wall behind you
+	if (key == K_S)
+	{
+		if (!world_map[(int)(vars->pos_x - vars->dir_x * vars->move_speed)][(int)(vars->pos_y)])
+			vars->pos_x -= vars->dir_x * vars->move_speed;
+		if (!world_map[(int)(vars->pos_x)][(int)(vars->pos_y - vars->dir_y * vars->move_speed)])
+			vars->pos_y -= vars->dir_y * vars->move_speed;
+	}
+	//rotate to the right
+	if (key == K_D)
+	{
+		//both camera direction and camera plane must be rotated
+		double olddir_x = vars->dir_x;
+		vars->dir_x = vars->dir_x * cos(-vars->rotate_speed) - vars->dir_y * sin(-vars->rotate_speed);
+		vars->dir_y = olddir_x * sin(-vars->rotate_speed) + vars->dir_y * cos(-vars->rotate_speed);
+		double oldplane_x = vars->plane_x;
+		vars->plane_x = vars->plane_x * cos(-vars->rotate_speed) - vars->plane_y * sin(-vars->rotate_speed);
+		vars->plane_y = oldplane_x * sin(-vars->rotate_speed) + vars->plane_y * cos(-vars->rotate_speed);
+	}
+	//rotate to the left
+	if (key == K_A)
+	{
+		//both camera direction and camera plane must be rotated
+		double olddir_x = vars->dir_x;
+		vars->dir_x = vars->dir_x * cos(vars->rotate_speed) - vars->dir_y * sin(vars->rotate_speed);
+		vars->dir_y = olddir_x * sin(vars->rotate_speed) + vars->dir_y * cos(vars->rotate_speed);
+		double oldplane_x = vars->plane_x;
+		vars->plane_x = vars->plane_x * cos(vars->rotate_speed) - vars->plane_y * sin(vars->rotate_speed);
+		vars->plane_y = oldplane_x * sin(vars->rotate_speed) + vars->plane_y * cos(vars->rotate_speed);
+	}
+	if (key == K_ESC)
+		exit(0);
+	return (0);
+}
+
 int     main(int argc, char **argv)
 {
 	void    *img;
-	void    *mlx;
 	int	x;
 	int y;
 	t_vars	*vars;
+
+	vars = malloc(sizeof(t_vars));
 	vars->mlx = mlx_init();
 
 	vars->pos_x = 12;
@@ -208,16 +254,16 @@ int     main(int argc, char **argv)
 
 	vars->win = mlx_new_window(vars->mlx, width, height, "mlx");
 
-	mlx_loop_hook(vars->mlx, &main_loop, vars);
-	mlx_hook(vars->win, X_EVENT_KEY_PRESS, 0, &key_hook, vars);
+	// mlx_loop_hook(vars->mlx, &main_loop, vars);
+	// mlx_hook(vars->win, X_EVENT_KEY_PRESS, 0, &key_hook, vars);
 
-	mlx_loop(vars->mlx);
+	// mlx_loop(vars->mlx);
 
 	// open_map_path(argv[1]);
 
-	// mlx_key_hook(vars->win, key_hook, vars);
-	// mlx_loop_hook(vars->mlx, &main_loop, vars);
-	// mlx_hook(vars->win, K_ESC, 1L<<17, close_window, vars);
+	mlx_key_hook(vars->win, key_hook, vars);
+	mlx_loop_hook(vars->mlx, &main_loop, vars);
+	mlx_hook(vars->win, K_ESC, 1L<<17, close_window, vars);
 
-	// mlx_loop(vars->mlx);
+	mlx_loop(vars->mlx);
 }
