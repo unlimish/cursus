@@ -268,7 +268,8 @@ int     main(int argc, char **argv)
 
 	mlx_key_hook(vars->win, key_hook, vars);
 	mlx_loop_hook(vars->mlx, &main_loop, vars);
-	mlx_hook(vars->win, K_ESC, 1L<<17, close_window, vars);
+	mlx_hook(vars->win, X_EVENT_KEY_PRESS, 1L<<0, &key_press, vars);
+	// mlx_hook(vars->win, K_ESC, 1L<<17, close_window, vars);
 
 	mlx_loop(vars->mlx);
 }
