@@ -161,8 +161,9 @@ void	calc(t_vars *vars)
 		if (side == 1)
 			color = color / 2;
 
+		ver_line(vars, x, 0, draw_start, 0x12AAEE);
 		ver_line(vars, x, draw_start, draw_end, color);
-
+		ver_line(vars, x, draw_end, height, 0x000000);
 		x++;
 	}
 }
@@ -191,6 +192,8 @@ static int key_hook(int keycode, t_vars *vars)
 
 int	key_press(int key, t_vars *vars)
 {
+	printf("%d\n", key);
+	fflush(stdout);
 	if (key == K_W)
 	{
 		if (!world_map[(int)(vars->pos_x + vars->dir_x * vars->move_speed)][(int)(vars->pos_y)])
@@ -237,6 +240,7 @@ int	key_press(int key, t_vars *vars)
 	{
         mlx_destroy_window(vars->mlx, vars->win);
 		exit(0);
+	}
 	return (0);
 }
 
@@ -268,7 +272,6 @@ int     main(int argc, char **argv)
 
 	// open_map_path(argv[1]);
 
-	mlx_key_hook(vars->win, key_hook, vars);
 	mlx_loop_hook(vars->mlx, &main_loop, vars);
 	mlx_hook(vars->win, X_EVENT_KEY_PRESS, 1L<<0, &key_press, vars);
 	// mlx_hook(vars->win, K_ESC, 1L<<17, close_window, vars);
