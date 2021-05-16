@@ -234,6 +234,8 @@ int	key_press(int key, t_vars *vars)
 		exit (0);
 	}
 	if (key == K_ESC)
+	{
+        mlx_destroy_window(vars->mlx, vars->win);
 		exit(0);
 	return (0);
 }
