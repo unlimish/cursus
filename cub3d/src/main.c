@@ -119,7 +119,7 @@ void	calc(t_vars *vars)
 		{
 			if (side_dist_x <side_dist_y)
 			{
-				side_dist_x < delta_dist_x;
+				side_dist_x += delta_dist_x;
 				map_x += step_x;
 				side = 0;
 			}
