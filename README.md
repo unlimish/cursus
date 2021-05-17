@@ -6,7 +6,7 @@
 * [ft_server](#ft_server)
 * [ft_mini_ls](#ft_mini_ls)
 
-## [libft](https://github.com/unlimish/cursus/tree/master/libft)
+## [libft](https://github.com/unlimish/libft) [![NormCI](https://github.com/unlimish/libft/actions/workflows/norminetteCI.yml/badge.svg)](https://github.com/unlimish/libft/actions/workflows/norminetteCI.yml)
 *Reimplementation of libc*
 ### Usage
 ```bash
