@@ -237,10 +237,7 @@ int	key_press(int key, t_vars *vars)
 		exit (0);
 	}
 	if (key == K_ESC)
-	{
-        mlx_destroy_window(vars->mlx, vars->win);
-		exit(0);
-	}
+		close_window(vars);
 	return (0);
 }
 
@@ -267,6 +264,7 @@ int     main(int argc, char **argv)
 
 	mlx_loop_hook(vars->mlx, &main_loop, vars);
 	mlx_hook(vars->win, X_EVENT_KEY_PRESS, 1L<<0, &key_press, vars);
+	mlx_hook(vars->win, X_EVENT_KEY_EXIT, 1L << 17, close_window, vars);
 
 	mlx_loop(vars->mlx);
 }
