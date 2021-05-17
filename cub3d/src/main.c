@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../minilibx-linux/mlx.h"
+#include "mlx.h"
 #include "../inc/cub3d.h"
 #include "../inc/key_macros.h"
 
@@ -119,7 +119,7 @@ void	calc(t_vars *vars)
 		{
 			if (side_dist_x <side_dist_y)
 			{
-				side_dist_x < delta_dist_x;
+				side_dist_x += delta_dist_x;
 				map_x += step_x;
 				side = 0;
 			}
@@ -148,21 +148,22 @@ void	calc(t_vars *vars)
 
 		int color;
 		if (world_map[map_x][map_y] == 1)
-			color = 0xFF0000;
+			color = 0xcf3177ff;
 		else if (world_map[map_x][map_y] == 2)
-			color = 0x00FF00;
+			color = 0xef767aff;
 		else if (world_map[map_x][map_y] == 3)
-			color = 0x0000FF;
+			color = 0x25ced1ff;
 		else if (world_map[map_x][map_y] == 4)
-			color = 0xFFFFFF;
+			color = 0x6fbaa2ff;
 		else
-			color = 0xFFFF00;
+			color = 0xe8ebe4ff;
 
 		if (side == 1)
 			color = color / 2;
 
+		ver_line(vars, x, 0, draw_start, 0xe8ebe488);
 		ver_line(vars, x, draw_start, draw_end, color);
-
+		ver_line(vars, x, draw_end, height, 0x25ce0ee);
 		x++;
 	}
 }
@@ -191,6 +192,8 @@ static int key_hook(int keycode, t_vars *vars)
 
 int	key_press(int key, t_vars *vars)
 {
+	printf("%d\n", key);
+	fflush(stdout);
 	if (key == K_W)
 	{
 		if (!world_map[(int)(vars->pos_x + vars->dir_x * vars->move_speed)][(int)(vars->pos_y)])
@@ -228,8 +231,16 @@ int	key_press(int key, t_vars *vars)
 		vars->plane_x = vars->plane_x * cos(vars->rotate_speed) - vars->plane_y * sin(vars->rotate_speed);
 		vars->plane_y = oldplane_x * sin(vars->rotate_speed) + vars->plane_y * cos(vars->rotate_speed);
 	}
+	if (key == K_CROSS)
+	{
+        mlx_destroy_window(vars->mlx, vars->win);
+		exit (0);
+	}
 	if (key == K_ESC)
+	{
+        mlx_destroy_window(vars->mlx, vars->win);
 		exit(0);
+	}
 	return (0);
 }
 
@@ -243,7 +254,7 @@ int     main(int argc, char **argv)
 	vars = malloc(sizeof(t_vars));
 	vars->mlx = mlx_init();
 
-	vars->pos_x = 12;
+	vars->pos_x = 5;
 	vars->pos_y = 5;
 	vars->dir_x = -1;
 	vars->dir_y = 0;
@@ -252,18 +263,10 @@ int     main(int argc, char **argv)
 	vars->move_speed = 0.05;
 	vars->rotate_speed = 0.05;
 
-	vars->win = mlx_new_window(vars->mlx, width, height, "mlx");
+	vars->win = mlx_new_window(vars->mlx, width, height, "");
 
-	// mlx_loop_hook(vars->mlx, &main_loop, vars);
-	// mlx_hook(vars->win, X_EVENT_KEY_PRESS, 0, &key_hook, vars);
-
-	// mlx_loop(vars->mlx);
-
-	// open_map_path(argv[1]);
-
-	mlx_key_hook(vars->win, key_hook, vars);
 	mlx_loop_hook(vars->mlx, &main_loop, vars);
-	mlx_hook(vars->win, K_ESC, 1L<<17, close_window, vars);
+	mlx_hook(vars->win, X_EVENT_KEY_PRESS, 1L<<0, &key_press, vars);
 
 	mlx_loop(vars->mlx);
 }
