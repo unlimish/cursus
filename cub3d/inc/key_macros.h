@@ -65,6 +65,7 @@
 
 # define K_SP 49
 # define K_TAB 48
+# define K_ESC 65307
 
 /*
 ** Mouse
