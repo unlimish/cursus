@@ -9,9 +9,6 @@
 
 # include "../libft/libft.h"
 
-# define K_ESC 33
-# define K_CROSS 65307
-
 typedef struct s_res
 {
 	unsigned long	height;
