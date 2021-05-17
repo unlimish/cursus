@@ -9,6 +9,13 @@
 
 # include "../libft/libft.h"
 
+typedef struct s_rgb
+{
+	int	r;
+	int	g;
+	int	b;
+}	t_rgb;
+
 typedef struct s_res
 {
 	unsigned long	height;
