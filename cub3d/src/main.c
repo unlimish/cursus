@@ -180,16 +180,6 @@ int	main_loop(t_vars *vars)
 	return (0);
 }
 
-static int key_hook(int keycode, t_vars *vars)
-{
-	printf("%d\n", keycode);
-    if (keycode == K_CROSS)
-	{
-        mlx_destroy_window(vars->mlx, vars->win);
-		exit (0);
-	}
-}
-
 int	key_press(int key, t_vars *vars)
 {
 	printf("%d\n", key);
@@ -230,11 +220,6 @@ int	key_press(int key, t_vars *vars)
 		double oldplane_x = vars->plane_x;
 		vars->plane_x = vars->plane_x * cos(vars->rotate_speed) - vars->plane_y * sin(vars->rotate_speed);
 		vars->plane_y = oldplane_x * sin(vars->rotate_speed) + vars->plane_y * cos(vars->rotate_speed);
-	}
-	if (key == K_CROSS)
-	{
-        mlx_destroy_window(vars->mlx, vars->win);
-		exit (0);
 	}
 	if (key == K_ESC)
 		close_window(vars);
