@@ -8,7 +8,7 @@ MINILIB_X = minilibx-linux/libmlx.a -lXext -lX11 -lm
 main:
 	$(CC) $(SRCS) -I$(INCS) -I./minilibx-linux $(MINILIB_X) && ./a.out
 addr:
-	$(CC) -fsanitize=address $(SRCS) -I$(INCS) $(MINILIB_X) && ./a.out
+	$(CC) -fsanitize=address -g $(SRCS) -I$(INCS)  -I./minilibx-linux $(MINILIB_X) && ./a.out
 
 %.o: %.c
 	$(CC) -Wall  -I/usr/include -Imlx_linux -O3 -c $< -o $@
