@@ -5,18 +5,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "mlx.h"
+#include "../minilibx-linux/mlx.h"
 #include "../inc/cub3d.h"
 #include "../inc/key_macros.h"
 
 # define width 640
 # define height 480
+# define tex_height 64
+# define tex_width 64
 # define X_EVENT_KEY_PRESS	2
 # define X_EVENT_KEY_EXIT	17
 
+typedef	struct s_img	{
+		void	*img;
+		int		*data;
+
+		int		size_l;
+		int		bpp;
+		int		endian;
+		int		img_width;
+		int		img_height;
+}				t_img;
+
 typedef struct  s_vars {
-        void    *mlx;
-        void    *win;
+		void    *mlx;
+		void    *win;
+		t_img	img;
 		double	pos_x;
 		double	pos_y;
 		double	dir_x;
@@ -25,8 +39,10 @@ typedef struct  s_vars {
 		double	plane_y;
 		double	move_speed;
 		double	rotate_speed;
+		int		**buf;
+		int		texture[8][tex_height * tex_width];
 
-}               t_vars;
+}				t_vars;
 
 int	world_map[24][24] = {
 							{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -55,17 +71,27 @@ int	world_map[24][24] = {
 							{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 						};
 
-void	ver_line(t_vars *vars, int x, int y1, int y2, int color)
+void	draw(t_vars *info)
 {
-	int	y;
-
-	y = y1;
-	while (y <= y2)
+	for (int y = 0; y < height; y++)
 	{
-		mlx_pixel_put(vars->mlx, vars->win, x, y, color);
-		y++;
+		for (int x = 0; x < width; x++)
+		{
+			info->img.data[y * width + x] = info->buf[y][x];
+		}
 	}
+	mlx_put_image_to_window(info->mlx, info->win, info->img.img, 0, 0);
 }
+// void	ver_line(t_vars *vars, int x, int y1, int y2, int color)
+// {
+// 	int	y;
+// 	y = y1;
+// 	while (y <= y2)
+// 	{
+// 			mlx_pixel_put(vars->mlx, vars->win, x, y, color);
+// 		y++;
+// 	}
+// }
 
 void	calc(t_vars *vars)
 {
@@ -146,24 +172,56 @@ void	calc(t_vars *vars)
 		if (draw_end >= height)
 			draw_end = height - 1;
 
-		int color;
-		if (world_map[map_x][map_y] == 1)
-			color = 0xcf3177ff;
-		else if (world_map[map_x][map_y] == 2)
-			color = 0xef767aff;
-		else if (world_map[map_x][map_y] == 3)
-			color = 0x25ced1ff;
-		else if (world_map[map_x][map_y] == 4)
-			color = 0x6fbaa2ff;
+		int	tex_num = world_map[map_x][map_y];
+
+		double wall_x;
+		if (side == 0)
+			wall_x = vars->pos_y + perp_wall_dist * ray_dir_y;
 		else
-			color = 0xe8ebe4ff;
+			wall_x = vars->pos_x + perp_wall_dist * ray_dir_x;
+		wall_x -= floor(wall_x);
 
-		if (side == 1)
-			color = color / 2;
+		int tex_x = (int)(wall_x * (double) tex_width);
+		if (side == 0 && ray_dir_x > 0)
+			tex_x = tex_width - tex_x - 1;
+		if (side == 1 && ray_dir_y < 0)
+			tex_x = tex_width - tex_x - 1;
 
-		ver_line(vars, x, 0, draw_start, 0xe8ebe488);
-		ver_line(vars, x, draw_start, draw_end, color);
-		ver_line(vars, x, draw_end, height, 0x25ce0ee);
+		double step = 1.0 * tex_height / line_height;
+		double tex_pos = (draw_start - height / 2 + line_height / 2) * step;
+		for (int y = draw_start; y < draw_end; y++)
+		{
+			int tex_y = (int)tex_pos & (tex_height - 1);
+			tex_pos += step;
+			int color = vars->texture[tex_num][tex_height * tex_y + tex_x];
+			if (side == 1)
+				color = (color >> 1) & 8355711;
+			vars->buf[y][x] = color;
+		}
+
+		for (int y = 0; y < draw_start; y++)
+		{
+			int tex_y = (int)tex_pos & (tex_height - 1);
+			tex_pos += step;
+			int color = vars->texture[0][tex_height * tex_y + tex_x];
+			if (side == 1)
+				color = (color >> 1) & 8355711;
+			vars->buf[y][x] = color;
+		}
+		for (int y = draw_end; y < height; y++)
+		{
+			int tex_y = (int)tex_pos & (tex_height - 1);
+			tex_pos += step;
+			int color = vars->texture[0][tex_height * tex_y + tex_x];
+			if (side == 1)
+				color = (color >> 1) & 8355711;
+			vars->buf[y][x] = color;
+		}
+
+		// ver_line(vars, x, 0, draw_start, 0xe8ebe488);
+		// ver_line(vars, x, draw_start, draw_end, color);
+		// ver_line(vars, x, draw_end, height, 0x25ce0ee);
+
 		x++;
 	}
 }
@@ -177,6 +235,7 @@ static int	close_window(t_vars *vars)
 int	main_loop(t_vars *vars)
 {
 	calc(vars);
+	draw(vars);
 	return (0);
 }
 
@@ -242,10 +301,54 @@ int     main(int argc, char **argv)
 	vars->dir_y = 0;
 	vars->plane_x = 0;
 	vars->plane_y = 0.66;
+
+vars->buf = (int **)malloc(sizeof(int *) * height);
+	for (int i = 0; i < height; i++)
+	{
+		vars->buf[i] = (int *)malloc(sizeof(int) * width);
+	}
+
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			vars->buf[i][j] = 0;
+		}
+	}
+
+	for (int i = 0; i < 8; i++)
+	{
+		for (int j = 0; j < tex_height * tex_width; j++)
+		{
+			vars->texture[i][j] = 0;
+		}
+	}
+
+	for (int x = 0; x < tex_width; x++)
+	{
+		for (int y = 0; y < tex_height; y++)
+		{
+			int xorcolor = (x * 256 / tex_width) ^ (y * 256 / tex_height);
+			int ycolor = y * 256 / tex_height;
+			int xycolor = y * 128 / tex_height + x * 128 / tex_width;
+			vars->texture[0][tex_width * y + x] = 65536 * 254 * (x != y && x != tex_width - y); //flat red texture with black cross
+			vars->texture[1][tex_width * y + x] = xycolor + 256 * xycolor + 65536 * xycolor; //sloped greyscale
+			vars->texture[2][tex_width * y + x] = 256 * xycolor + 65536 * xycolor; //sloped yellow gradient
+			vars->texture[3][tex_width * y + x] = xorcolor + 256 * xorcolor + 65536 * xorcolor; //xor greyscale
+			vars->texture[4][tex_width * y + x] = 256 * xorcolor; //xor green
+			vars->texture[5][tex_width * y + x] = 65536 * 192 * (x % 16 && y % 16); //red bricks
+			vars->texture[6][tex_width * y + x] = 65536 * ycolor; //red gradient
+			vars->texture[7][tex_width * y + x] = 128 + 256 * 128 + 65536 * 128; //flat grey texture
+		}
+	}
+
 	vars->move_speed = 0.05;
 	vars->rotate_speed = 0.05;
 
 	vars->win = mlx_new_window(vars->mlx, width, height, "");
+
+	vars->img.img = mlx_new_image(vars->mlx, width, height);
+	vars->img.data = (int *)mlx_get_data_addr(vars->img.img, &vars->img.bpp, &vars->img.size_l, &vars->img.endian);
 
 	mlx_loop_hook(vars->mlx, &main_loop, vars);
 	mlx_hook(vars->win, X_EVENT_KEY_PRESS, 1L<<0, &key_press, vars);
