@@ -5,18 +5,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "mlx.h"
+#include "../minilibx-linux/mlx.h"
 #include "../inc/cub3d.h"
 #include "../inc/key_macros.h"
 
 # define width 640
 # define height 480
+# define tex_height 64
+# define tex_width 64
 # define X_EVENT_KEY_PRESS	2
 # define X_EVENT_KEY_EXIT	17
 
+typedef	struct s_img	{
+		void	*img;
+		int		*data;
+
+		int		size_l;
+		int		bpp;
+		int		endian;
+		int		img_width;
+		int		img_height;
+}				t_img;
+
 typedef struct  s_vars {
-        void    *mlx;
-        void    *win;
+		void    *mlx;
+		void    *win;
+		t_img	img;
 		double	pos_x;
 		double	pos_y;
 		double	dir_x;
@@ -25,8 +39,10 @@ typedef struct  s_vars {
 		double	plane_y;
 		double	move_speed;
 		double	rotate_speed;
+		int		buf[height][width];
+		int		**texture;
 
-}               t_vars;
+}				t_vars;
 
 int	world_map[24][24] = {
 							{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -55,22 +71,81 @@ int	world_map[24][24] = {
 							{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 						};
 
-void	ver_line(t_vars *vars, int x, int y1, int y2, int color)
+void	draw(t_vars *info)
 {
-	int	y;
-
-	y = y1;
-	while (y <= y2)
+	for (int y = 0; y < height; y++)
 	{
-		mlx_pixel_put(vars->mlx, vars->win, x, y, color);
-		y++;
+		for (int x = 0; x < width; x++)
+		{
+			info->img.data[y * width + x] = info->buf[y][x];
+		}
 	}
+	mlx_put_image_to_window(info->mlx, info->win, info->img.img, 0, 0);
 }
+// void	ver_line(t_vars *vars, int x, int y1, int y2, int color)
+// {
+// 	int	y;
+// 	y = y1;
+// 	while (y <= y2)
+// 	{
+// 			mlx_pixel_put(vars->mlx, vars->win, x, y, color);
+// 		y++;
+// 	}
+// }
 
 void	calc(t_vars *vars)
 {
-	int	x;
+	int y;
+	y = 0;
+	while (y < height)
+	{
+		float	ray_dir_x_0 = vars->dir_x - vars->plane_x;
+		float	ray_dir_y_0 = vars->dir_y - vars->plane_y;
+		float	ray_dir_x_1 = vars->dir_x + vars->plane_x;
+		float	ray_dir_y_1 = vars->dir_y + vars->plane_y;
 
+		int	p = y - height / 2;
+
+		float	pos_z = 0.5 * height;
+
+		float	row_distance = pos_z / p;
+
+		float	floor_step_x = row_distance * (ray_dir_x_1 - ray_dir_x_0) / width;
+		float	floor_step_y = row_distance * (ray_dir_y_1 - ray_dir_y_0) / width;
+
+		float	floor_x = vars->pos_x + row_distance * ray_dir_x_0;
+		float	floor_y = vars->pos_y + row_distance * ray_dir_y_0;
+
+		for (int x = 0; x < width; ++x)
+		{
+			int	cell_x = (int)(floor_x);
+			int	cell_y = (int)(floor_y);
+
+			int	tx = (int)(tex_width * (floor_x - cell_x)) & (tex_width - 1);
+			int	ty = (int)(tex_height * (floor_y - cell_y)) & (tex_height - 1);
+
+			floor_x += floor_step_x;
+			floor_y += floor_step_y;
+
+			int	floor_texture = 7;
+			int	ceiling_texture = 6;
+
+			int	color;
+
+			color = vars->texture[floor_texture][tex_width * ty + tx];
+			// color = (color >> 1) & 8355711;
+
+			vars->buf[y][x] = color;
+
+			color = vars->texture[ceiling_texture][tex_width * ty + tx];
+			// color = (color >> 1) & 8355711;
+
+			vars->buf[height - y - 1][x] = color;
+		}
+		y++;
+	}
+
+	int	x;
 	x = 0;
 	while (x < width)
 	{
@@ -146,24 +221,95 @@ void	calc(t_vars *vars)
 		if (draw_end >= height)
 			draw_end = height - 1;
 
-		int color;
-		if (world_map[map_x][map_y] == 1)
-			color = 0xcf3177ff;
-		else if (world_map[map_x][map_y] == 2)
-			color = 0xef767aff;
-		else if (world_map[map_x][map_y] == 3)
-			color = 0x25ced1ff;
-		else if (world_map[map_x][map_y] == 4)
-			color = 0x6fbaa2ff;
+		int	tex_num = world_map[map_x][map_y];
+
+		double wall_x;
+		if (side == 0)
+			wall_x = vars->pos_y + perp_wall_dist * ray_dir_y;
 		else
-			color = 0xe8ebe4ff;
+			wall_x = vars->pos_x + perp_wall_dist * ray_dir_x;
+		wall_x -= floor(wall_x);
 
-		if (side == 1)
-			color = color / 2;
+		int tex_x = (int)(wall_x * (double) tex_width);
+		if (side == 0 && ray_dir_x > 0)
+			tex_x = tex_width - tex_x - 1;
+		if (side == 1 && ray_dir_y < 0)
+			tex_x = tex_width - tex_x - 1;
 
-		ver_line(vars, x, 0, draw_start, 0xe8ebe488);
-		ver_line(vars, x, draw_start, draw_end, color);
-		ver_line(vars, x, draw_end, height, 0x25ce0ee);
+		double step = 1.0 * tex_height / line_height;
+		double tex_pos = (draw_start - height / 2 + line_height / 2) * step;
+		for (int y = draw_start; y < draw_end; y++)
+		{
+			int tex_y = (int)tex_pos & (tex_height - 1);
+			tex_pos += step;
+			int color = vars->texture[tex_num][tex_height * tex_y + tex_x];
+			if (side == 1)
+				color = (color >> 1) & 8355711;
+			vars->buf[y][x] = color;
+		}
+
+		double	floor_x_wall;
+		double	floor_y_wall;
+
+		if (side == 0 && ray_dir_x > 0)
+		{
+			floor_x_wall = map_x;
+			floor_y_wall = map_y + wall_x;
+		}
+		else if (side == 0 && ray_dir_x < 0)
+		{
+			floor_x_wall = map_x + 1.0;
+			floor_y_wall = map_y + wall_x;
+		}
+		else if (side == 1 && ray_dir_x > 0)
+		{
+			floor_x_wall = map_x + wall_x;
+			floor_y_wall = map_y;
+		}
+		else
+		{
+			floor_x_wall = map_x + wall_x;
+			floor_y_wall = map_y + 1.0;
+		}
+
+		double	dist_wall;
+		double	dist_player;
+		double	current_dist;
+
+		dist_wall = perp_wall_dist;
+		dist_player = 0.0;
+
+		if (draw_end < 0)
+			draw_end = height;
+
+		for (int y = draw_end + 1; y < height; y++)
+		{
+			current_dist = height / (2.0 * y - height);
+
+			double	weight = (current_dist - dist_player) / (dist_wall - dist_player);
+
+			double current_floor_x = weight * floor_x_wall + (1.0 - weight) * vars->pos_x;
+			double current_floor_y = weight * floor_y_wall + (1.0 - weight) * vars->pos_y;
+
+			int floor_tex_x;
+			int	floor_tex_y;
+			floor_tex_x = (int)(current_floor_x * tex_width) % tex_width;
+			floor_tex_y = (int)(current_floor_y * tex_height) % tex_height;
+
+			int	checker_board_pattern = ((int)(current_floor_x) + (int)(current_floor_y)) % 2;
+			int	floor_texture;
+			if (checker_board_pattern == 0)
+				floor_texture = 3;
+			else floor_texture = 4;
+
+			// vars->buf[y][x] = (vars->texture[floor_texture][tex_width * floor_tex_y + floor_tex_x] >> 1) & 8355711;
+			// vars->buf[height - y][x] = vars->texture[6][tex_width * floor_tex_y + floor_tex_x];
+		}
+
+
+
+		// ver_line(vars, x, draw_start, draw_end, color);
+
 		x++;
 	}
 }
@@ -177,17 +323,8 @@ static int	close_window(t_vars *vars)
 int	main_loop(t_vars *vars)
 {
 	calc(vars);
+	draw(vars);
 	return (0);
-}
-
-static int key_hook(int keycode, t_vars *vars)
-{
-	printf("%d\n", keycode);
-    if (keycode == K_CROSS)
-	{
-        mlx_destroy_window(vars->mlx, vars->win);
-		exit (0);
-	}
 }
 
 int	key_press(int key, t_vars *vars)
@@ -231,17 +368,54 @@ int	key_press(int key, t_vars *vars)
 		vars->plane_x = vars->plane_x * cos(vars->rotate_speed) - vars->plane_y * sin(vars->rotate_speed);
 		vars->plane_y = oldplane_x * sin(vars->rotate_speed) + vars->plane_y * cos(vars->rotate_speed);
 	}
-	if (key == K_CROSS)
-	{
-        mlx_destroy_window(vars->mlx, vars->win);
-		exit (0);
-	}
 	if (key == K_ESC)
-	{
-        mlx_destroy_window(vars->mlx, vars->win);
-		exit(0);
-	}
+		close_window(vars);
 	return (0);
+}
+
+void	load_image(t_vars *vars, int *texture, char *path, t_img *img)
+{
+	img->img = mlx_xpm_file_to_image(vars->mlx, path, &img->img_width, &img->img_height);
+	img->data = (int *)mlx_get_data_addr(img->img, &img->bpp, &img->size_l, &img->endian);
+	for (int y = 0; y < img->img_height; y++)
+	{
+		for (int x = 0; x < img->img_width; x++)
+		{
+			texture[img->img_width * y + x] = img->data[img->img_width * y + x];
+		}
+	}
+	mlx_destroy_image(vars->mlx, img->img);
+}
+
+void	load_texture(t_vars *vars)
+{
+	t_img	img;
+
+	load_image(vars, vars->texture[0], "tex/eagle.xpm", &img);
+	load_image(vars, vars->texture[1], "tex/redbrick.xpm", &img);
+	load_image(vars, vars->texture[2], "tex/purplestone.xpm", &img);
+	load_image(vars, vars->texture[3], "tex/greystone.xpm", &img);
+	load_image(vars, vars->texture[4], "tex/bluestone.xpm", &img);
+	load_image(vars, vars->texture[5], "tex/mossy.xpm", &img);
+	// load_image(vars, vars->texture[6], "tex/wood.xpm", &img);
+	for (int x = 0; x < tex_width; x++)
+	{
+		for (int y = 0; y < tex_height; y++)
+		{
+			int	B;
+			int	G;
+			int	R;
+			R = 0;
+			G = 0;
+			B = 64;
+			vars->texture[6][tex_width * y + x] =B + 256 * G + 65536 * R;
+			R = 0;
+			G = 128;
+			B = 0;
+			vars->texture[7][tex_width * y + x] =B + 256 * G + 65536 * R;
+		}
+	}
+	// load_image(vars, vars->texture[7], "tex/colorstone.xpm", &img);
 }
 
 int     main(int argc, char **argv)
@@ -260,13 +434,43 @@ int     main(int argc, char **argv)
 	vars->dir_y = 0;
 	vars->plane_x = 0;
 	vars->plane_y = 0.66;
+
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			vars->buf[i][j] = 0;
+		}
+	}
+
+	if (!(vars->texture = (int **)malloc(sizeof(int *) * 8)))
+		return (-1);
+	for (int i = 0; i < 8; i++)
+	{
+		if (!(vars->texture[i] = (int *)malloc(sizeof(int) * (tex_height * tex_width))))
+			return (-1);
+	}
+	for (int i = 0; i < 8; i++)
+	{
+		for (int j = 0; j < tex_height * tex_width; j++)
+		{
+			vars->texture[i][j] = 0;
+		}
+	}
+
+	load_texture(vars);
+
 	vars->move_speed = 0.05;
 	vars->rotate_speed = 0.05;
 
 	vars->win = mlx_new_window(vars->mlx, width, height, "");
 
+	vars->img.img = mlx_new_image(vars->mlx, width, height);
+	vars->img.data = (int *)mlx_get_data_addr(vars->img.img, &vars->img.bpp, &vars->img.size_l, &vars->img.endian);
+
 	mlx_loop_hook(vars->mlx, &main_loop, vars);
 	mlx_hook(vars->win, X_EVENT_KEY_PRESS, 1L<<0, &key_press, vars);
+	mlx_hook(vars->win, X_EVENT_KEY_EXIT, 1L << 17, close_window, vars);
 
 	mlx_loop(vars->mlx);
 }
