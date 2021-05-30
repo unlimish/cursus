@@ -14,35 +14,85 @@
 # define tex_height 64
 # define tex_width 64
 # define X_EVENT_KEY_PRESS	2
+# define X_EVENT_KEY_RELEASE 3
 # define X_EVENT_KEY_EXIT	17
+# define numSprites 19
 
-typedef	struct s_img	{
-		void	*img;
-		int		*data;
+struct Sprite
+{
+	double	x;
+	double	y;
+	int		texture;
+};
 
-		int		size_l;
-		int		bpp;
-		int		endian;
-		int		img_width;
-		int		img_height;
-}				t_img;
+int		sprite_order[numSprites];
+double	sprite_distance[numSprites];
 
-typedef struct  s_vars {
-		void    *mlx;
-		void    *win;
-		t_img	img;
-		double	pos_x;
-		double	pos_y;
-		double	dir_x;
-		double	dir_y;
-		double	plane_x;
-		double	plane_y;
-		double	move_speed;
-		double	rotate_speed;
-		int		buf[height][width];
-		int		**texture;
+typedef	struct	s_pair
+{
+	double	first;
+	int		second;
+}				t_pair;
 
-}				t_vars;
+static int comp(const void *first, const void *second)
+{
+	if (*(int *)first > *(int *)second)
+		return (1);
+	else if (*(int *)first < *(int *)second)
+		return (-1);
+	else
+		return (0);
+}
+
+void	sort_order(t_pair *orders, int amount)
+{
+	t_pair	tmp;
+	int		i;
+	int		j;
+
+	i = 0;
+	while (i < amount)
+	{
+		j = 0;
+		while (j < amount)
+		{
+			if (orders[j].first > orders[j + 1].first)
+			{
+				tmp.first = orders[j].first;
+				tmp.second = orders[j].second;
+				orders[j].first = orders[j + 1].first;
+				orders[j].second = orders[j + 1].second;;
+				orders[j + 1].first = tmp.first;
+				orders[j + 1].second = tmp.second;
+			}
+			j++;
+		}
+		i++;
+	}
+}
+
+void	sort_sprites(int *order, double *dist, int amount)
+{
+	t_pair	*sprites;
+	int		i;
+
+	sprites = (t_pair*)malloc(sizeof(t_pair) * amount);
+	i = 0;
+	while (i < amount)
+	{
+		sprites[i].first = dist[i];
+		sprites[i].second = order[i];
+		i++;
+	}
+	sort_order(sprites, amount);
+	i = 0;
+	while (i < amount)
+	{
+		dist[i] = sprites[amount - i - 1].first;
+		order[i] = sprites[amount - i - 1].second;
+	}
+	free(sprites);
+}
 
 int	world_map[24][24] = {
 							{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -460,7 +510,7 @@ int     main(int argc, char **argv)
 
 	load_texture(vars);
 
-	vars->move_speed = 0.05;
+	vars->move_speed = 0.10;
 	vars->rotate_speed = 0.05;
 
 	vars->win = mlx_new_window(vars->mlx, width, height, "");
