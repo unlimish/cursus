@@ -4,3 +4,6 @@
 [submodule "libunit"]
 	path = libunit
 	url = https://github.com/unlimish/libunit
+[submodule "libft"]
+	path = libft
+	url = git@github.com:unlimish/libft.git
