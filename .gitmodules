@@ -1,3 +1,6 @@
 [submodule "cub3d/minilibx-linux"]
 	path = cub3d/minilibx-linux
 	url = git@github.com:42Paris/minilibx-linux.git
+[submodule "libunit"]
+	path = libunit
+	url = https://github.com/unlimish/libunit
