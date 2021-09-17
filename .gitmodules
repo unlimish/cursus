@@ -7,3 +7,6 @@
 [submodule "libft"]
 	path = libft
 	url = git@github.com:unlimish/libft.git
+[submodule "minitalk"]
+	path = minitalk
+	url = git@github.com:unlimish/minitalk.git
